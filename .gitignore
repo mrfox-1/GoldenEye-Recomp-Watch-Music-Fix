@@ -1,0 +1,8 @@
+# Runtime payloads are attached to Releases, not committed to source control.
+/payload/
+/vgmstream/
+*.zip
+*.wav
+*.xwb
+*.xsb
+*.xgs
