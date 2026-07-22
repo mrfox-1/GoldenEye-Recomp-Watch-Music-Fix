@@ -1,36 +1,64 @@
-# GoldenEye Recomp Watch Music Fix — Superseded
+# GoldenEye Recomp Native XACT Music Fix
 
-This repository contains the original external-WAV workaround for missing music
-in GoldenEye Recomp 1.2.4. It is preserved for reference, but it is no longer
-the recommended fix.
+Restores missing music transitions in the Windows 1.2.4 release of
+[GoldenEye Recomp](https://github.com/SunJaycy/GoldenEye-Recomp) using the
+game's original XACT music system and the user's existing music banks.
 
-The replacement is a fully native XACT implementation submitted upstream in
-[GoldenEye-Recomp PR #114](https://github.com/SunJaycy/GoldenEye-Recomp/pull/114).
-It uses the music already present in each user's original `music.xwb`,
-`music.xsb`, and `music.xgs` files as-is.
+## Fixed
 
-## What the native patch fixes
+- 007 watch/pause-menu theme
+- Mission Select music after abort, failure, and completion
+- Control elevator/X-track music
+- Caverns elevator/X-track music
+- Correct elevator or primary level music after closing the watch
+- Stale elevator state after mission restart
 
-- Restores the 007 watch/pause-menu theme.
-- Restores Mission Select music after mission abort, failure, and completion.
-- Implements the missing elevator/X-track commands used by Control and Caverns.
-- Restores the correct elevator or primary level cue after closing the watch.
-- Prevents stale elevator state from suppressing music after an abort/restart.
+## Install
 
-## What changed from this workaround
+1. Install the official GoldenEye Recomp v1.2.4 Windows release.
+2. Download the latest Windows x64 ZIP from
+   [Releases](https://github.com/mrfox-1/GoldenEye-Recomp-Watch-Music-Fix/releases/latest).
+3. Back up your existing `GoldenEye.exe`.
+4. Replace it with the `GoldenEye.exe` from the ZIP.
+5. Keep the original `assets` folder and runtime DLLs in place.
 
-The initial proof of concept extracted streams from `music.xwb` and played them
-through Windows `PlaySoundW`. That established the missing state transitions,
-but its separate mixer produced different volume behavior and required locally
-generated WAV files.
+No WAV files need to be extracted. No game audio or other game asset is
+distributed by this project.
 
-The upstream patch instead calls GoldenEye's existing logical-cue translation,
-XACT cue manager, mission-music state machine, and cue stop/start wrappers. It
-also implements the F4/F5 music-script handlers that were left as printf-only
-stubs in the XBLA executable.
+## How v2 works
 
-No WAV extraction, external audio playback, installer, or bundled game audio is
-required by the native patch. No copyrighted game asset is included in the PR.
+The first v1.0.0 proof of concept extracted the watch cue from `music.xwb` and
+played it with Windows `PlaySoundW`. That proved the missing transition but used
+a separate mixer and required a generated WAV.
 
-See [issue #83](https://github.com/SunJaycy/GoldenEye-Recomp/issues/83) for the
-original report and test discussion.
+Version 2.0.0 instead uses GoldenEye's internal logical-cue translation, XACT
+cue manager, mission-music state machine, and native cue stop/start wrappers.
+It also implements the F4/F5 music-script commands that were left as
+printf-only stubs in the XBLA executable.
+
+The game reads the authentic music directly from the user's existing:
+
+- `assets/music.xwb`
+- `assets/music.xsb`
+- `assets/music.xgs`
+
+## Source and upstream contribution
+
+The complete source change, technical explanation, and validation record are
+available in
+[SunJaycy/GoldenEye-Recomp PR #114](https://github.com/SunJaycy/GoldenEye-Recomp/pull/114).
+The maintained branch is
+[`mrfox-1:agent/restore-watch-music`](https://github.com/mrfox-1/GoldenEye-Recomp/tree/agent/restore-watch-music).
+
+This repository does not contain a ROM, XEX, XWB/XSB/XGS bank, extracted WAV,
+texture, or other original game asset. Users must supply their own legally
+obtained game files.
+
+## Compatibility
+
+The replacement executable is built and tested against GoldenEye Recomp 1.2.4
+for Windows x64. It is an unofficial community fix while upstream review is
+pending.
+
+The old extraction installer and v1.0.0 release remain available for historical
+reference but are no longer recommended.
