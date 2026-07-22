@@ -44,8 +44,16 @@ The game reads the authentic music directly from the user's existing:
 
 ## Source and upstream contribution
 
-The complete source change, technical explanation, and validation record are
-available in
+The native implementation is browsable directly in [`source/`](source):
+
+- [`source/ge_hooks.cpp`](source/ge_hooks.cpp) contains the native cue,
+  watch-state, Mission Select, and F4/F5 X-track implementation.
+- [`source/ge_config.toml`](source/ge_config.toml) contains the two mid-ASM
+  opcode hooks.
+- [`patches/native-xact-audio-v2.0.0.patch`](patches/native-xact-audio-v2.0.0.patch)
+  is the clean cumulative patch against GoldenEye Recomp 1.2.4.
+
+The upstream contribution, technical explanation, and validation record are at
 [SunJaycy/GoldenEye-Recomp PR #114](https://github.com/SunJaycy/GoldenEye-Recomp/pull/114).
 The maintained branch is
 [`mrfox-1:agent/restore-watch-music`](https://github.com/mrfox-1/GoldenEye-Recomp/tree/agent/restore-watch-music).
@@ -60,5 +68,6 @@ The replacement executable is built and tested against GoldenEye Recomp 1.2.4
 for Windows x64. It is an unofficial community fix while upstream review is
 pending.
 
-The old extraction installer and v1.0.0 release remain available for historical
-reference but are no longer recommended.
+The old extraction installer and v1 source are preserved under
+[`legacy-v1/`](legacy-v1) for historical reference but are no longer
+recommended.
