@@ -1162,15 +1162,22 @@ void ge_missing_music_tick(PPCContext& ctx, uint8_t* base) {
   const uint32_t music_state = LD32(base, GE_MUSIC_STATE);
   const uint32_t pending_stage = LD32(base, GE_PENDING_STAGE);
   const uint32_t current_stage = LD32(base, GE_CURRENT_STAGE);
+  const bool title_requested = current_stage == GE_TITLE_STAGE ||
+                               pending_stage == GE_TITLE_STAGE;
 
-  ge_xtrack_tick(ctx, base, player_active);
+  // The outgoing mission's viewport/player pointers can remain valid while
+  // stage 90 is loading.  Do not let that stale player keep an elevator
+  // X-track timer alive behind Mission Select, where its eventual expiry would
+  // restart the previous stage's primary music.
+  if (title_requested && ge_any_xtrack_slot_active()) {
+    REXKRNL_INFO("GEXTRACK clearing slots for Mission Select transition");
+  }
+  ge_xtrack_tick(ctx, base, player_active && !title_requested);
 
   // Some XBLA exits write the boss stage globals directly and never call the
   // N64-style setter. Arm only after an actual player is active in a non-title
   // stage, then observe either current or pending stage becoming title (90).
   // This covers abort, failure, and completion without playing on initial boot.
-  const bool title_requested = current_stage == GE_TITLE_STAGE ||
-                               pending_stage == GE_TITLE_STAGE;
   if (player_active && current_stage != GE_TITLE_STAGE && !title_requested) {
     saw_active_non_title_stage = true;
   }

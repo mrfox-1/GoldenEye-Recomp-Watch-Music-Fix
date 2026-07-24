@@ -12,6 +12,7 @@ game's original XACT music system and the user's existing music banks.
 - Caverns elevator/X-track music
 - Correct elevator or primary level music after closing the watch
 - Stale elevator state after mission restart
+- Stale Control music replacing Mission Select after an elevator abort
 
 ## Install
 
@@ -50,7 +51,7 @@ The native implementation is browsable directly in [`source/`](source):
   watch-state, Mission Select, and F4/F5 X-track implementation.
 - [`source/ge_config.toml`](source/ge_config.toml) contains the two mid-ASM
   opcode hooks.
-- [`patches/native-xact-audio-v2.0.0.patch`](patches/native-xact-audio-v2.0.0.patch)
+- [`patches/native-xact-audio-v2.0.1.patch`](patches/native-xact-audio-v2.0.1.patch)
   is the clean cumulative patch against GoldenEye Recomp 1.2.4.
 
 The upstream contribution, technical explanation, and validation record are at
