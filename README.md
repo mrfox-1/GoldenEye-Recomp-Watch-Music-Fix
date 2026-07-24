@@ -1,10 +1,11 @@
-# GoldenEye Recomp Native XACT Music Fix
+# GoldenEye Recomp Community Fix
 
-Restores missing music transitions in the Windows 1.2.4 release of
-[GoldenEye Recomp](https://github.com/SunJaycy/GoldenEye-Recomp) using the
-game's original XACT music system and the user's existing music banks.
+Provides a tested replacement executable for the Windows 1.2.4 release of
+[GoldenEye Recomp](https://github.com/SunJaycy/GoldenEye-Recomp). It restores
+missing music through the game's native XACT system and fixes horizontal
+mouse aiming while driving the tank.
 
-## Fixed
+## Fixed audio
 
 - 007 watch/pause-menu theme
 - Mission Select music after abort, failure, and completion
@@ -13,6 +14,12 @@ game's original XACT music system and the user's existing music banks.
 - Correct elevator or primary level music after closing the watch
 - Stale elevator state after mission restart
 - Stale Control music replacing Mission Select after an elevator abort
+
+## Fixed controls
+
+- Horizontal and vertical tank turret aiming with the mouse
+- Mouse aiming and W/A/S/D tank driving at the same time
+- No need to hold Aim merely to turn the turret
 
 ## Install
 
@@ -26,7 +33,7 @@ game's original XACT music system and the user's existing music banks.
 No WAV files need to be extracted. No game audio or other game asset is
 distributed by this project.
 
-## How v2 works
+## How the audio fix works
 
 The first v1.0.0 proof of concept extracted the watch cue from `music.xwb` and
 played it with Windows `PlaySoundW`. That proved the missing transition but used
@@ -43,21 +50,37 @@ The game reads the authentic music directly from the user's existing:
 - `assets/music.xsb`
 - `assets/music.xgs`
 
-## Source and upstream contribution
+## How the tank fix works
 
-The native implementation is browsable directly in [`source/`](source):
+GoldenEye's ordinary mouse hook writes Bond's camera yaw. While mounted, the
+game rebuilds that yaw every simulation tick from the tank body and native
+turret orientation, which immediately erased horizontal mouse movement.
+
+Version 2.1 detects the game's authoritative mounted-state flag and applies
+mouse X to the native turret target and smoothed orientation. The original tank
+code remains responsible for steering, collision rollback, controller input,
+and the final camera. Vertical aiming continues through the existing mouse path.
+
+## Source and upstream contributions
+
+The combined implementation is browsable directly in [`source/`](source):
 
 - [`source/ge_hooks.cpp`](source/ge_hooks.cpp) contains the native cue,
-  watch-state, Mission Select, and F4/F5 X-track implementation.
+  watch-state, Mission Select, F4/F5 X-track, and tank mouse-aim implementation.
 - [`source/ge_config.toml`](source/ge_config.toml) contains the two mid-ASM
   opcode hooks.
-- [`patches/native-xact-audio-v2.0.1.patch`](patches/native-xact-audio-v2.0.1.patch)
+- [`patches/goldeneye-community-fixes-v2.1.0.patch`](patches/goldeneye-community-fixes-v2.1.0.patch)
   is the clean cumulative patch against GoldenEye Recomp 1.2.4.
 
-The upstream contribution, technical explanation, and validation record are at
-[SunJaycy/GoldenEye-Recomp PR #114](https://github.com/SunJaycy/GoldenEye-Recomp/pull/114).
-The maintained branch is
-[`mrfox-1:agent/restore-watch-music`](https://github.com/mrfox-1/GoldenEye-Recomp/tree/agent/restore-watch-music).
+The upstream contributions, technical explanations, and validation records are:
+
+- [Native XACT audio PR #114](https://github.com/SunJaycy/GoldenEye-Recomp/pull/114)
+- [Tank mouse-aim PR #116](https://github.com/SunJaycy/GoldenEye-Recomp/pull/116)
+
+The maintained source branches are
+[`mrfox-1:agent/restore-watch-music`](https://github.com/mrfox-1/GoldenEye-Recomp/tree/agent/restore-watch-music)
+and
+[`mrfox-1:agent/fix-tank-mouse-aim`](https://github.com/mrfox-1/GoldenEye-Recomp/tree/agent/fix-tank-mouse-aim).
 
 This repository does not contain a ROM, XEX, XWB/XSB/XGS bank, extracted WAV,
 texture, or other original game asset. Users must supply their own legally
@@ -66,7 +89,8 @@ obtained game files.
 ## Compatibility
 
 The replacement executable is built and tested against GoldenEye Recomp 1.2.4
-for Windows x64. It is an unofficial community fix while upstream review is
+for Windows x64. Version 2.1.0 contains the audio and tank fixes in the same
+`GoldenEye.exe`. It is an unofficial community fix while upstream review is
 pending.
 
 The old extraction installer and v1 source are preserved under
