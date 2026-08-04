@@ -1,3 +1,44 @@
+diff --git a/CMakePresets.json b/CMakePresets.json
+index bc05703..680f13b 100644
+--- a/CMakePresets.json
++++ b/CMakePresets.json
+@@ -61,7 +61,10 @@
+             "name": "win-amd64-release",
+             "displayName": "Windows AMD64 Release",
+             "inherits": "windows-base",
+-            "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
++            "cacheVariables": {
++                "CMAKE_BUILD_TYPE": "Release",
++                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG"
++            }
+         },
+         {
+             "name": "linux-amd64-debug",
+diff --git a/README.md b/README.md
+index 90e3032..25a2191 100644
+--- a/README.md
++++ b/README.md
+@@ -4,6 +4,20 @@
+ 
+ A native PC recompilation of the Xbox 360 version of GoldenEye 007.
+ 
++> [!IMPORTANT]
++> This community fork includes the native XACT audio repairs from
++> [upstream PR #114](https://github.com/SunJaycy/GoldenEye-Recomp/pull/114)
++> and the tank mouse-aim repair from
++> [upstream PR #116](https://github.com/SunJaycy/GoldenEye-Recomp/pull/116).
++> It restores the 007 watch theme, Mission Select music after missions, and
++> the Control/Caverns elevator tracks without extracted WAV files. It also
++> restores horizontal mouse aiming while driving the Runway tank, the animated
++> Frigate water surface at every camera height, and the original delayed body
++> fade instead of dead enemies disappearing immediately.
++>
++> Windows 1.2.4 users can download the tested replacement executable from the
++> [latest GoldenEye Recomp Community Fix release](https://github.com/mrfox-1/GoldenEye-Recomp-Watch-Music-Fix/releases/latest).
++
+ ## A quick note
+ 
+ I've been getting a lot of hate over this project, so I want to address it once and move on.
 diff --git a/ge_config.toml b/ge_config.toml
 index 1e00018..261f33c 100644
 --- a/ge_config.toml
