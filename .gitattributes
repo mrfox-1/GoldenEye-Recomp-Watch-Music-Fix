@@ -1,0 +1,3 @@
+# Unified diff files require a one-character prefix on otherwise blank context
+# lines. Do not report that patch syntax as repository trailing whitespace.
+patches/*.patch -whitespace

@@ -1,23 +1,23 @@
-# GoldenEye community fixes v2.1 source
+# GoldenEye community fixes v2.2.0 source
 
-These are the complete modified source/config files used for the v2.1.0
-combined build. The audio work is maintained on
-[`mrfox-1:agent/restore-watch-music`](https://github.com/mrfox-1/GoldenEye-Recomp/tree/agent/restore-watch-music),
-and the tested tank fix is commit `6af3560` on
-[`mrfox-1:agent/fix-tank-mouse-aim`](https://github.com/mrfox-1/GoldenEye-Recomp/tree/agent/fix-tank-mouse-aim).
+These are the complete modified source/configuration files used for the tested
+v2.2.0 Windows x64 build. They are copied from commit
+`d637d3d2933abf20312db60dd4f1c7b05f6752fc` of
+[`mrfox-1/GoldenEye-Recomp`](https://github.com/mrfox-1/GoldenEye-Recomp/commit/d637d3d2933abf20312db60dd4f1c7b05f6752fc).
 
-- `ge_hooks.cpp` implements native watch and Mission Select cue playback,
-  F4/F5 X-track commands, Control/Caverns elevator transitions, and correct
-  music restoration. It also clears outgoing X-track timers before Mission
-  Select so stale level music cannot return after their duration expires. The
-  same file also routes horizontal mouse input to the native turret state while
-  Bond is mounted in a tank.
-- `ge_config.toml` declares the missing F4/F5 mid-ASM hooks.
+- `ge_hooks.cpp` contains the native XACT music transitions, F4/F5 X-track
+  commands, tank mouse aiming, post-effect dimension repair, and Frigate
+  water/near-clip hooks.
+- `ge_config.toml` declares the required mid-ASM hooks.
+- `ge_app.h` makes a normal Windows launch use the adjacent `assets` folder
+  when no explicit `--game_data_root` was provided.
+- `ge_manifest.toml`, `ge_menu.h`, `ge_postfx.h`, and `ge_username.h` contain
+  the small current-SDK build compatibility adjustments used by the release.
 - `CMakeLists.txt` is the clean project build file with no `winmm` dependency.
 - `UPSTREAM-LICENSE` is GoldenEye Recomp's source license.
 
-For review or application to another 1.2.4 checkout, use the smaller cumulative
-patch at
-[`../patches/goldeneye-community-fixes-v2.1.0.patch`](../patches/goldeneye-community-fixes-v2.1.0.patch).
+For review or application to another 1.2.4 checkout, use the cumulative patch:
+[`../patches/goldeneye-community-fixes-v2.2.0.patch`](../patches/goldeneye-community-fixes-v2.2.0.patch).
 
-No generated recompiled game code or game asset is included.
+No generated recompilation output or game asset is included. The official
+Windows 1.2.4 assets already contain the Frigate skydome used by the fix.
