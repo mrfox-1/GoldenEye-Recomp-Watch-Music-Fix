@@ -32,13 +32,15 @@ All music uses the game's native XACT cue system and the user's existing
 - Frigate water remains visible beside the speedboat and from lower camera
   heights instead of turning into a flat blue plane or a clipped gap
 
-The official Windows 1.2.4 asset set already includes the correct Frigate
-skydome. This fix uses that existing file unchanged; no texture, skydome, XEX,
-ROM, or other game asset is included in this repository or its release.
+The executable uses the Frigate skydome already present in the adjacent
+`assets` folder and does not install, replace, or download game data. No
+texture, skydome, XEX, ROM, or other game asset is included in this repository
+or its release.
 
 ## Install
 
-1. Install the official GoldenEye Recomp v1.2.4 Windows release.
+1. Set up the official GoldenEye Recomp v1.2.4 Windows release with its normal
+   `assets` folder.
 2. Download the latest Windows x64 ZIP from
    [Releases](https://github.com/mrfox-1/GoldenEye-Recomp-Watch-Music-Fix/releases/latest).
 3. Back up the existing `GoldenEye.exe` in that folder.
