@@ -3,7 +3,7 @@
 Provides a tested replacement executable for the Windows 1.2.4 release of
 [GoldenEye Recomp](https://github.com/SunJaycy/GoldenEye-Recomp). The current
 build repairs missing native music transitions, tank mouse aiming, dead-body
-fading, and Frigate water rendering in one `GoldenEye.exe`.
+fading, Frigate water rendering, and a multiplayer-menu crash.
 
 ## Fixed audio
 
@@ -43,13 +43,20 @@ or its release.
    `assets` folder.
 2. Download the latest Windows x64 ZIP from
    [Releases](https://github.com/mrfox-1/GoldenEye-Recomp-Watch-Music-Fix/releases/latest).
-3. Back up the existing `GoldenEye.exe` in that folder.
-4. Replace it with the `GoldenEye.exe` from the ZIP.
+3. Back up the existing `GoldenEye.exe` and DLLs in that folder.
+4. Copy every file from the ZIP into the game folder, replacing files when
+   prompted. The ZIP contains the matching ReXGlue and Windows runtime DLLs.
 5. Double-click `GoldenEye.exe`.
 
-Keep the original `assets` folder and runtime DLLs beside the executable. The
-community build automatically uses the adjacent `assets` folder, so a normal
-Explorer launch does not require `--game_data_root`.
+Keep the original `assets` folder beside the executable. The community build
+automatically uses that adjacent folder, so a normal Explorer launch does not
+require `--game_data_root`. No game assets are included in the download.
+
+## Fixed compatibility
+
+- Multiplayer no longer crashes while opening its menu
+- The Windows ZIP includes the exact `rexruntimerd.dll`, `TracyClientrd.dll`,
+  Vulkan loader, and Microsoft runtime DLLs used by the tested build
 
 ## How the repairs work
 
@@ -86,9 +93,9 @@ camera does not clip the surface.
 
 ## Source and upstream contributions
 
-The complete modified source/configuration files used for v2.2.0 are in
+The complete modified source/configuration files used for v2.2.1 are in
 [`source/`](source). The cumulative patch against GoldenEye Recomp 1.2.4 is
-[`patches/goldeneye-community-fixes-v2.2.0.patch`](patches/goldeneye-community-fixes-v2.2.0.patch).
+[`patches/goldeneye-community-fixes-v2.2.1.patch`](patches/goldeneye-community-fixes-v2.2.1.patch).
 
 Upstream contributions and technical review records:
 
@@ -104,7 +111,8 @@ generated recompiled game source is committed.
 
 The replacement executable is built and tested against GoldenEye Recomp 1.2.4
 for Windows x64. Version 2.2.0 contains every repair listed above in the same
-`GoldenEye.exe`. It is an unofficial community build while the focused
+`GoldenEye.exe`; version 2.2.1 adds the multiplayer regression repair and a
+self-contained runtime package. It is an unofficial community build while the focused
 upstream pull requests are pending.
 
 The old WAV-extraction installer and v1 source remain under

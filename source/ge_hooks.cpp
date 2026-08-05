@@ -38,6 +38,15 @@
 #include <shellapi.h>  // ShellExecuteW (WIN32_LEAN_AND_MEAN excludes it)
 #include <string>
 
+// Replaces the unsupported `bc 20,lt,0x820F285C` at 0x820F2838. BO=20 makes
+// this an unconditional branch; ge_config.toml supplies the explicit target.
+void ge_fix_mp_menu_branch() {
+  static std::atomic_bool logged{false};
+  if (!logged.exchange(true)) {
+    REXKRNL_INFO("GEMP multiplayer menu branch fix executed");
+  }
+}
+
 namespace ge {
 // Relaunch this same executable as a fresh, detached process. Used by the ONLINE
 // pause-menu tab's "Save & Restart": the new instance reads the just-written
