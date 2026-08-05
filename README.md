@@ -11,7 +11,11 @@ fading, Frigate water rendering, and a multiplayer-menu crash.
 - Mission Select music after abort, failure, and completion
 - Control elevator/X-track music
 - Caverns elevator/X-track music
-- Correct elevator or primary level music after closing the watch
+- Watch music pauses the active level/elevator cue and resumes it from the
+  exact playback position when the watch closes
+- Exiting a Control/Caverns elevator resumes the level theme from its previous
+  position; entering an elevator starts its theme from the beginning, matching
+  the original N64 behavior
 - Stale elevator state after mission restart
 - Stale Control music replacing Mission Select after an elevator abort
 
@@ -65,8 +69,10 @@ require `--game_data_root`. No game assets are included in the download.
 The original v1.0 proof of concept extracted the watch cue and used a separate
 Windows mixer. Version 2 and later instead use GoldenEye's logical-cue
 translation, XACT cue manager, mission-music state machine, and native cue
-stop/start wrappers. They also implement the F4/F5 music-script commands that
-were left as diagnostic stubs in the XBLA executable.
+controls. They also implement the F4/F5 music-script commands that were left as
+diagnostic stubs in the XBLA executable. Version 2.2.2 uses XACT cue pause and
+resume so the watch and elevator transitions preserve the underlying playback
+cursor instead of recreating the level cue from its beginning.
 
 ### Tank mouse aiming
 
@@ -93,9 +99,9 @@ camera does not clip the surface.
 
 ## Source and upstream contributions
 
-The complete modified source/configuration files used for v2.2.1 are in
+The complete modified source/configuration files used for v2.2.2 are in
 [`source/`](source). The cumulative patch against GoldenEye Recomp 1.2.4 is
-[`patches/goldeneye-community-fixes-v2.2.1.patch`](patches/goldeneye-community-fixes-v2.2.1.patch).
+[`patches/goldeneye-community-fixes-v2.2.2.patch`](patches/goldeneye-community-fixes-v2.2.2.patch).
 
 Upstream contributions and technical review records:
 
@@ -112,8 +118,9 @@ generated recompiled game source is committed.
 The replacement executable is built and tested against GoldenEye Recomp 1.2.4
 for Windows x64. Version 2.2.0 contains every repair listed above in the same
 `GoldenEye.exe`; version 2.2.1 adds the multiplayer regression repair and a
-self-contained runtime package. It is an unofficial community build while the focused
-upstream pull requests are pending.
+self-contained runtime package. Version 2.2.2 preserves native music playback
+position across watch and elevator transitions. It is an unofficial community
+build while the focused upstream pull requests are pending.
 
 The old WAV-extraction installer and v1 source remain under
 [`legacy-v1/`](legacy-v1) for historical reference but are not recommended.
