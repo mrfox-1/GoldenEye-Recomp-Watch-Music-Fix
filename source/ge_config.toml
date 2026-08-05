@@ -51,6 +51,17 @@ address = 0x82198C94
 name = "ge_dbg_now"
 registers = ["r9", "r30"]
 after_instruction = true
+
+# Multiplayer menu transition: the original instruction is `bc 20,lt`, whose
+# BO=20 encoding is an unconditional branch. ReXGlue 0.8 leaves this specific
+# form unimplemented, so replace it with an explicit jump to its target.
+[[midasm_hook]]
+address = 0x820F2838
+name = "ge_fix_mp_menu_branch"
+registers = []
+after_instruction = false
+jump_address = 0x820F285C
+
 [[midasm_hook]]
 address = 0x82199944
 name = "ge_diag_vdswap"
