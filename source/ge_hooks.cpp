@@ -968,6 +968,7 @@ std::chrono::steady_clock::time_point g_xtrack_last_tick =
     std::chrono::steady_clock::now();
 bool g_xtrack_had_player = false;
 uint32_t g_xtrack_last_music_state = UINT32_MAX;
+uint32_t g_xtrack_paused_primary_cue = 0;
 
 bool ge_any_xtrack_slot_active() {
   for (const GEXTrackSlot& slot : g_xtrack_slots) {
@@ -983,6 +984,29 @@ void ge_stop_native_music_cue(PPCContext& ctx, uint8_t* base,
                               uint32_t slot) {
   ctx.r3.u32 = slot;
   sub_82144A80(ctx, base);
+}
+
+// IXACTCue vtable layout used by this 2007 XACT build:
+//   +0x04 Stop(DWORD), +0x08 GetState(DWORD*), +0x30 Pause(BOOL).
+// The game's music slot contains a small wrapper whose first word is the cue.
+// Pause preserves the XACT playback cursor, unlike sub_82144A80 (Stop).
+bool ge_pause_native_music_cue(PPCContext& source_ctx, uint8_t* base,
+                               uint32_t slot, bool pause,
+                               uint32_t expected_cue = 0u) {
+  const uint32_t wrapper = LD32(base, GE_MUSIC_CUES + slot * 4u);
+  if (!wrapper) return false;
+  const uint32_t cue = LD32(base, wrapper);
+  if (!cue || (expected_cue && cue != expected_cue)) return false;
+  const uint32_t vtable = LD32(base, cue);
+  const uint32_t pause_method = vtable ? LD32(base, vtable + 0x30u) : 0u;
+  if (!pause_method) return false;
+
+  PPCContext ctx = source_ctx;
+  ctx.r3.u32 = cue;
+  ctx.r4.u32 = pause ? 1u : 0u;
+  ctx.ctr.u32 = pause_method;
+  REX_CALL_INDIRECT_FUNC(ctx.ctr.u32);
+  return ctx.r3.s32 >= 0;
 }
 
 void ge_start_stage_primary_cue(PPCContext& ctx, uint8_t* base) {
@@ -1031,16 +1055,38 @@ void ge_set_mission_music_state(PPCContext& source_ctx, uint8_t* base,
   sub_82144C60(call_ctx, base);
 
   if (entering_xtrack) {
-    // The transition has created Track 2, but its original Track-1 fade call
-    // is a no-op in XBLA. Use the game's well-tested cue-stop wrapper instead.
-    ge_stop_native_music_cue(call_ctx, base, 0u);
+    // N64 fades Track 1 to silence without replacing its sequence, then fades
+    // that same player back in when Track 2 ends. Pause the XACT cue so its
+    // playback cursor survives the elevator visit. Track 2 itself is still
+    // created fresh by the native transition on every entry.
+    const uint32_t primary_wrapper = LD32(base, GE_MUSIC_CUES);
+    const uint32_t primary_cue =
+        primary_wrapper ? LD32(base, primary_wrapper) : 0u;
+    if (primary_cue && ge_pause_native_music_cue(
+                           call_ctx, base, 0u, true, primary_cue)) {
+      g_xtrack_paused_primary_cue = primary_cue;
+      REXKRNL_INFO("GEXTRACK paused primary cue={:08X}", primary_cue);
+    } else {
+      // Retain the previous safe behavior if an unexpected cue layout is ever
+      // encountered; leaving the elevator will recreate the primary track.
+      g_xtrack_paused_primary_cue = 0;
+      ge_stop_native_music_cue(call_ctx, base, 0u);
+      REXKRNL_ERROR("GEXTRACK could not pause primary cue; using restart fallback");
+    }
   } else if (leaving_xtrack) {
-    // Its Track-2 fade-out is the same no-op. Stop Track 2, then recreate the
-    // stage's primary cue through the same native lookup/play path used at
-    // mission start. This restarts rather than cross-fades, but stays entirely
-    // within already-exercised game wrappers and avoids unsafe vtable guesses.
+    // N64 ends the elevator/X-track here, but resumes the already-loaded main
+    // sequence. Stop Track 2 and unpause the exact Track-1 cue saved on entry.
     ge_stop_native_music_cue(call_ctx, base, 1u);
-    ge_start_stage_primary_cue(call_ctx, base);
+    if (g_xtrack_paused_primary_cue &&
+        ge_pause_native_music_cue(call_ctx, base, 0u, false,
+                                  g_xtrack_paused_primary_cue)) {
+      REXKRNL_INFO("GEXTRACK resumed primary cue={:08X}",
+                   g_xtrack_paused_primary_cue);
+    } else {
+      ge_start_stage_primary_cue(call_ctx, base);
+      REXKRNL_ERROR("GEXTRACK could not resume primary cue; used restart fallback");
+    }
+    g_xtrack_paused_primary_cue = 0;
   }
 
   g_xtrack_last_music_state = LD32(base, GE_MUSIC_STATE);
@@ -1069,6 +1115,7 @@ void ge_refresh_xtrack_state(PPCContext& ctx, uint8_t* base) {
       g_xtrack_slots = {};
       REXKRNL_INFO("GEXTRACK cleared stale slots at native state {}", state);
     }
+    g_xtrack_paused_primary_cue = 0;
     g_xtrack_last_music_state = state;
     return;
   }
@@ -1097,6 +1144,7 @@ void ge_xtrack_tick(PPCContext& ctx, uint8_t* base, bool player_active) {
       g_xtrack_slots = {};
       g_xtrack_had_player = false;
     }
+    g_xtrack_paused_primary_cue = 0;
     g_xtrack_last_music_state = LD32(base, GE_MUSIC_STATE);
     return;
   }
@@ -1140,6 +1188,7 @@ enum class GENativeRestoredMusic {
 
 GENativeRestoredMusic g_native_restored_music =
     GENativeRestoredMusic::None;
+uint32_t g_native_restored_music_slot = UINT32_MAX;
 
 // Values accepted by sub_82144BA8 are the game's logical music indices, not
 // raw XACT cue indices. The runtime translation table maps 23 -> XACT 11
@@ -1156,6 +1205,7 @@ bool ge_start_native_restored_music(PPCContext& source_ctx, uint8_t* base,
   sub_82144BA8(call_ctx, base);
   if (LD32(base, GE_MUSIC_CUES + slot * 4u) == 0u) return false;
   g_native_restored_music = kind;
+  g_native_restored_music_slot = slot;
   return true;
 }
 
@@ -1185,6 +1235,8 @@ void ge_missing_music_tick(PPCContext& ctx, uint8_t* base) {
   static uint32_t title_settle_frames = 0;
   static uint32_t watch_saved_music_state = 0;
   static bool watch_stopped_native_tracks = false;
+  static uint32_t watch_paused_native_slot = UINT32_MAX;
+  static uint32_t watch_paused_native_cue = 0;
   const uint32_t active_viewport_player =
       ge_find_active_viewport_player(base);
   const uint32_t player = ge_find_active_player(base);
@@ -1230,7 +1282,10 @@ void ge_missing_music_tick(PPCContext& ctx, uint8_t* base) {
     ge_stop_native_music_cue(ctx, base, 0u);
     ge_stop_native_music_cue(ctx, base, 1u);
     g_native_restored_music = GENativeRestoredMusic::None;
+    g_native_restored_music_slot = UINT32_MAX;
     watch_stopped_native_tracks = false;
+    watch_paused_native_slot = UINT32_MAX;
+    watch_paused_native_cue = 0;
     if (ge_start_native_restored_music(
             ctx, base, GENativeRestoredMusic::MissionSelect, 0u,
             GE_LOGICAL_CUE_MISSION_SELECT)) {
@@ -1246,6 +1301,7 @@ void ge_missing_music_tick(PPCContext& ctx, uint8_t* base) {
     // A level's own startup replaces slot 0, so relinquish ownership without
     // stopping the new stage cue.
     g_native_restored_music = GENativeRestoredMusic::None;
+    g_native_restored_music_slot = UINT32_MAX;
   }
 
   const bool watch_open = player && LD32(base, GE_PAUSE_FLAG) != 0u &&
@@ -1255,14 +1311,29 @@ void ge_missing_music_tick(PPCContext& ctx, uint8_t* base) {
 
   if (watch_open) {
     watch_saved_music_state = music_state;
-    watch_stopped_native_tracks = true;
-    ge_stop_native_music_cue(ctx, base, 0u);
-    ge_stop_native_music_cue(ctx, base, 1u);
+    const bool xtrack_active = music_state == 2u || music_state == 5u ||
+                               ge_any_xtrack_slot_active();
+    watch_paused_native_slot = xtrack_active ? 1u : 0u;
+    const uint32_t native_wrapper =
+        LD32(base, GE_MUSIC_CUES + watch_paused_native_slot * 4u);
+    watch_paused_native_cue = native_wrapper ? LD32(base, native_wrapper) : 0u;
+    watch_stopped_native_tracks = !ge_pause_native_music_cue(
+        ctx, base, watch_paused_native_slot, true, watch_paused_native_cue);
+    if (watch_stopped_native_tracks) {
+      // Defensive fallback for a missing/invalid cue object. This retains the
+      // old behavior rather than allowing level and watch music to overlap.
+      ge_stop_native_music_cue(ctx, base, watch_paused_native_slot);
+      watch_paused_native_cue = 0;
+    }
     g_native_restored_music = GENativeRestoredMusic::None;
+    g_native_restored_music_slot = UINT32_MAX;
+    const uint32_t watch_slot = watch_paused_native_slot == 0u ? 1u : 0u;
     if (ge_start_native_restored_music(
-            ctx, base, GENativeRestoredMusic::Watch, 0u,
+            ctx, base, GENativeRestoredMusic::Watch, watch_slot,
             GE_LOGICAL_CUE_WATCH)) {
-      REXKRNL_INFO("GEWATCHMUSIC started native XACT watch cue");
+      REXKRNL_INFO("GEWATCHMUSIC paused slot {} cue={:08X}; watch in slot {}",
+                   watch_paused_native_slot, watch_paused_native_cue,
+                   watch_slot);
     } else {
       REXKRNL_ERROR("GEWATCHMUSIC could not play native watch cue");
     }
@@ -1270,10 +1341,16 @@ void ge_missing_music_tick(PPCContext& ctx, uint8_t* base) {
     const bool had_native_watch =
         g_native_restored_music == GENativeRestoredMusic::Watch;
     if (had_native_watch) {
-      ge_stop_native_music_cue(ctx, base, 0u);
+      ge_stop_native_music_cue(ctx, base, g_native_restored_music_slot);
       g_native_restored_music = GENativeRestoredMusic::None;
+      g_native_restored_music_slot = UINT32_MAX;
     }
-    if (watch_stopped_native_tracks && !title_requested) {
+    if (!title_requested && watch_paused_native_cue &&
+        ge_pause_native_music_cue(ctx, base, watch_paused_native_slot, false,
+                                  watch_paused_native_cue)) {
+      REXKRNL_INFO("GEWATCHMUSIC resumed slot {} cue={:08X}",
+                   watch_paused_native_slot, watch_paused_native_cue);
+    } else if (watch_stopped_native_tracks && !title_requested) {
       PPCContext restore_ctx = ctx;
       if (watch_saved_music_state == 2u || watch_saved_music_state == 5u ||
           ge_any_xtrack_slot_active()) {
@@ -1285,6 +1362,8 @@ void ge_missing_music_tick(PPCContext& ctx, uint8_t* base) {
       }
     }
     watch_stopped_native_tracks = false;
+    watch_paused_native_slot = UINT32_MAX;
+    watch_paused_native_cue = 0;
   }
 }
 }  // namespace
